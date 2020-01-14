@@ -5,4 +5,4 @@
     * [Anurag](https://github.com/AnuragAnalog)
     * [Ravi Teja](https://github.com/ravitejacms)
     * [Rahul](https://github.com/rahulbabloo)
-* Github repo link:-
+* Github repo link:- https://github.com/AnuragAnalog/Try-every-ML-algorithm/

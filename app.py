@@ -9,15 +9,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, mean_squared_error
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, mean_squared_error, mean_absolute_error, mean_squared_log_error
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, AdaBoostRegressor, AdaBoostClassifier, GradientBoostingRegressor, GradientBoostingClassifier
 
 # Constants and mappings
 
 DEFAULT_RANDOM_STATE = 88
 BOOL_OPTIONS = [True, False]
-ALGO_MAPPING = {'00': LinearRegression(n_jobs=-1), '01': KNeighborsRegressor(n_jobs=-1), '02': DecisionTreeRegressor(), '03': RandomForestRegressor(n_jobs=-1),
-                '10': LogisticRegression(n_jobs=-1), '11': KNeighborsClassifier(n_jobs=-1), '12': DecisionTreeClassifier(), '13': RandomForestClassifier(n_jobs=-1)}
+ALGO_MAPPING = {'00': LinearRegression(n_jobs=-1), '01': KNeighborsRegressor(n_jobs=-1), '02': DecisionTreeRegressor(), '03': RandomForestRegressor(n_jobs=-1), '04': AdaBoostRegressor(), '05': GradientBoostingRegressor(),
+                '10': LogisticRegression(n_jobs=-1), '11': KNeighborsClassifier(n_jobs=-1), '12': DecisionTreeClassifier(), '13': RandomForestClassifier(n_jobs=-1), '14': AdaBoostClassifier(), '15': GradientBoostingClassifier()}
 
 LINREG_MAPPING = {'fit_intercept': BOOL_OPTIONS, 'normalize': BOOL_OPTIONS}
 LOGREG_MAPPING = {'C': [None, 1.0, 2.0, 0.01], 'fit_intercept': BOOL_OPTIONS, 'penalty': ['l2', 'l1', 'elasticnet', 'none'], 'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'], 'max_iter': [None, 100, 500, 10], 'multi_class': ['auto', 'ovr', 'multinomial'], 'warm_start': BOOL_OPTIONS}
@@ -26,9 +26,15 @@ DTREG_MAPPING = {'criterion': ["mse", "friedman_mse", "mae"], 'splitter': ["best
 DTCLASS_MAPPING = {'criterion': ["gini", "entropy"], 'splitter': ["best", "random"], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
 RFREG_MAPPING = {'n_estimators': [None, 100, 1000, 50], 'criterion': ['mse', 'mae'], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS, 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
 RFCLASS_MAPPING = {'n_estimators': [None, 100, 1000, 50], 'criterion': ['gini', 'entropy'], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS, 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
+ADAREG_MAPPING = {'n_estimators': [None, 50, 500, 50], 'learning_rate': [None, 1.0, 2.0, 0.05], 'loss': ['linear', 'square', 'exponential']}
+ADACLASS_MAPPING = {'n_estimators': [None, 50, 500, 50], 'learning_rate': [None, 1.0, 2.0, 0.05], 'algorithm': ['SAMME', 'SAMME.R']}
+GBREG_MAPPING = {'loss': ['ls', 'lad', 'huber', 'quantile'], 'learning_rate': [None, 0.1, 1.0, 0.05], 'n_estimators': [None, 50, 500, 50], 'criterion': ["friedman_mse", "mse", "mae"], 'alpha': [None, 0.9, 2.0, 0.05], 'validation_fraction': [None, 0.1, 0.8, 0.1], 'n_iter_no_change': [None, 50, 100, 5], 'max_features': [None, "auto", "sqrt", "log2"], 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
+GBCLASS_MAPPING = {'loss': ['deviance', 'exponential'], 'learning_rate': [None, 0.1, 1.0, 0.05], 'n_estimators': [None, 50, 500, 50], 'criterion': ["friedman_mse", "mse", "mae"], 'validation_fraction': [None, 0.1, 0.8, 0.1], 'n_iter_no_change': [None, 50, 100, 5], 'max_features': [None, "auto", "sqrt", "log2"], 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
 
-ALGO_PARAMS_MAPPING = {'00': LINREG_MAPPING, '01': KNN_MAPPING, '02': DTREG_MAPPING, '03': RFREG_MAPPING,
-                '10': LOGREG_MAPPING, '11': KNN_MAPPING, '12': DTCLASS_MAPPING, '13': RFCLASS_MAPPING}
+ALGO_PARAMS_MAPPING = {'00': LINREG_MAPPING, '01': KNN_MAPPING, '02': DTREG_MAPPING, '03': RFREG_MAPPING, '04': ADAREG_MAPPING, '05': GBREG_MAPPING,
+                '10': LOGREG_MAPPING, '11': KNN_MAPPING, '12': DTCLASS_MAPPING, '13': RFCLASS_MAPPING, '14': ADACLASS_MAPPING, '15': GBCLASS_MAPPING}
+
+LOSS_MAPPING = {'mse': mean_squared_error, 'mae': mean_absolute_error, 'msle': mean_squared_log_error}
 
 st.title("Try Every Machine Learning Algorithms")
 st.text("Often, as a Data Scientist we are very lazy in trying all the different ML algorithms\nfor a given dataset.")
@@ -68,7 +74,7 @@ if data_file is not None:
 
     problem = st.selectbox("What type of Problem are you dealing with?", ['Regression', 'Classification'])
 
-    common_algos = ["K Nearest Neighbours", "Descision Trees", "Random Forest"]
+    common_algos = ["K Nearest Neighbours", "Descision Trees", "Random Forest", "Ada Boost", "Gradient Boosting"]
     if problem == "Regression":
         algos = ["Linear Regression"]+common_algos
         algo_name = st.selectbox(problem+" Algorithm", algos)
@@ -102,8 +108,10 @@ if data_file is not None:
 
     st.header("Evaluating the model's performance")
     if problem == "Regression":
-        training_loss = mean_squared_error(y_pred_train, y_train)
-        testing_loss = mean_squared_error(y_pred_test, y_test)
+        loss = st.selectbox("Select the type of loss", list(LOSS_MAPPING.keys()))
+
+        training_loss = LOSS_MAPPING[loss](y_pred_train, y_train)
+        testing_loss = LOSS_MAPPING[loss](y_pred_test, y_test)
 
         code_part_tls = "training_loss = mean_squared_error(y_pred_train, y_train)\ntesting_loss = mean_squared_error(y_pred_test, y_test)\n"
         code_part_tlp = "printf(\"Training Loss is\", training_loss)\nprintf(\"Testing Loss is\", testing_loss)\n"
@@ -134,9 +142,6 @@ if data_file is not None:
         code_part_cm = "con_mat = confusion_matrix(y_test, y_pred_test)\nprint(con_mat)\n"
         code_part_cr = "report = classification_report(y_test, y_pred_test)\nprint(report)\n"
         code_parts.extend([code_part_cm, code_part_cr])
-
-
-
 
     if st.checkbox("Show the code"):
         implement_code = ""

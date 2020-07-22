@@ -3,15 +3,30 @@
 import pandas as pd
 import streamlit as st
 
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
+# Constants and mappings
+
 DEFAULT_RANDOM_STATE = 88
 BOOL_OPTIONS = [True, False]
-ALGO_MAPPING = {}
+ALGO_MAPPING = {'00': LinearRegression(), '01': KNeighborsRegressor(), '02': DecisionTreeRegressor(), '03': RandomForestRegressor(),
+                '10': LogisticRegression(), '11': KNeighborsClassifier(), '12': DecisionTreeClassifier(), '13': RandomForestClassifier()}
+
+LINREG_MAPPING = {'fit_intercept': BOOL_OPTIONS, 'normalize': BOOL_OPTIONS}
+LOGREG_MAPPING = {'fit_intercept': BOOL_OPTIONS, 'penalty': ['l2', 'l1', 'elasticnet', 'none'], 'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga']}
+KNN_MAPPING = {'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'], 'p': [2, 3, 4, 5, 6, 7, 8], 'weights': ['uniform', 'distance']}
+DTREG_MAPPING = {'criterion': ["mse", "friedman_mse", "mae"], 'max_features': [None, "auto", "sqrt", "log2"]}
+DTCLASS_MAPPING = {'criterion': ["gini", "entropy"], 'max_features': [None, "auto", "sqrt", "log2"]}
+RFREG_MAPPING = {'n_estimators': [100, 200, 300], 'criterion': ['mse', 'mae'], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS}
+RFCLASS_MAPPING = {'n_estimators': [100, 200, 300], 'criterion': ['gini', 'entropy'], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS}
+
+ALGO_PARAMS_MAPPING = {'00': LINREG_MAPPING, '01': KNN_MAPPING, '02': DTREG_MAPPING, '03': RFREG_MAPPING,
+                '10': LOGREG_MAPPING, '11': KNN_MAPPING, '12': DTCLASS_MAPPING, '13': RFCLASS_MAPPING}
 
 st.title("Try Every Machine Learning Algorithms")
 st.text("Often, as a Data Scientist we are very lazy in trying all the different ML algorithms\nfor a given dataset.")
@@ -39,7 +54,6 @@ if data_file is not None:
     code_part_l = "y = data[[\'"+str(labels)+"\']]"
 
     train_size = st.slider("Train Test Split", value=0.7, format="%f")
-    st.write(train_size)
     code_part_tts = "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size="+str(1-train_size)+")"
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1-train_size, random_state=DEFAULT_RANDOM_STATE)
@@ -48,21 +62,36 @@ if data_file is not None:
 
     common_algos = ["K Nearest Neighbours", "Descision Trees", "Random Forest"]
     if problem == "Regression":
-        algos = ["Linear Regression"]
-        algo_name = st.selectbox(problem+" Algorithm", algos+common_algos)
+        algos = ["Linear Regression"]+common_algos
+        algo_name = st.selectbox(problem+" Algorithm", algos)
+
+        model_code = '0'+str(algos.index(algo_name))
     elif problem == "Classification":
-        algos = ["Logistic Regression"]
-        algo_name = st.selectbox(problem+" Algorithm", algos+common_algos)
+        algos = ["Logistic Regression"]+common_algos
+        algo_name = st.selectbox(problem+" Algorithm", algos)
+
+        model_code = '1'+str(algos.index(algo_name))
 
     st.sidebar.subheader("Hyperparametr  tuning")
-    param1 = st.sidebar.selectbox('fit_intercept', BOOL_OPTIONS, index=0)
-    param2 = st.sidebar.selectbox('normalize', BOOL_OPTIONS, index=1)
+    params = dict()
+    for name, value in ALGO_PARAMS_MAPPING[model_code].items():
+        params[name] = st.sidebar.selectbox(name, value)
 
-    model = LinearRegression(fit_intercept=param1, normalize=param2)
+    model = ALGO_MAPPING[model_code]
+    model.set_params(**params)
     model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
-    st.write(y_pred)
+    y_pred_train = model.predict(X_train)
+    y_pred_test = model.predict(X_test)
+
+    training_loss = mean_squared_error(y_pred_train, y_train)
+    testing_loss = mean_squared_error(y_pred_test, y_test)
+
+    code_part_tls = "training_loss = mean_squared_error(y_pred_train, y_train)\ntesting_loss = mean_squared_error(y_pred_test, y_test)"
+    code_part_tlp = "printf(\"Training Loss is\", training_loss)\nprintf(\"Testing Loss is\", testing_loss)"
+
+    st.write("Training Loss is", training_loss)
+    st.write("Testing Loss is", testing_loss)
 
 
 
@@ -74,5 +103,5 @@ if data_file is not None:
 
 
     if st.checkbox("Show the code"):
-        code_part = code_part_ld + "\n\n" + code_part_f + "\n" + code_part_l + "\n\n" + code_part_tts
+        code_part = code_part_ld + "\n\n" + code_part_f + "\n" + code_part_l + "\n\n" + code_part_tts + "\n\n" + code_part_tls + "\n\n" + code_part_tlp
         st.code(code_part)

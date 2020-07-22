@@ -3,6 +3,8 @@
 import pandas as pd
 import streamlit as st
 
+from typing import Union
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
@@ -14,16 +16,16 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 
 DEFAULT_RANDOM_STATE = 88
 BOOL_OPTIONS = [True, False]
-ALGO_MAPPING = {'00': LinearRegression(), '01': KNeighborsRegressor(), '02': DecisionTreeRegressor(), '03': RandomForestRegressor(),
-                '10': LogisticRegression(), '11': KNeighborsClassifier(), '12': DecisionTreeClassifier(), '13': RandomForestClassifier()}
+ALGO_MAPPING = {'00': LinearRegression(n_jobs=-1), '01': KNeighborsRegressor(n_jobs=-1), '02': DecisionTreeRegressor(), '03': RandomForestRegressor(n_jobs=-1),
+                '10': LogisticRegression(n_jobs=-1), '11': KNeighborsClassifier(n_jobs=-1), '12': DecisionTreeClassifier(), '13': RandomForestClassifier(n_jobs=-1)}
 
 LINREG_MAPPING = {'fit_intercept': BOOL_OPTIONS, 'normalize': BOOL_OPTIONS}
-LOGREG_MAPPING = {'fit_intercept': BOOL_OPTIONS, 'penalty': ['l2', 'l1', 'elasticnet', 'none'], 'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga']}
-KNN_MAPPING = {'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'], 'p': [2, 3, 4, 5, 6, 7, 8], 'weights': ['uniform', 'distance']}
-DTREG_MAPPING = {'criterion': ["mse", "friedman_mse", "mae"], 'max_features': [None, "auto", "sqrt", "log2"]}
-DTCLASS_MAPPING = {'criterion': ["gini", "entropy"], 'max_features': [None, "auto", "sqrt", "log2"]}
-RFREG_MAPPING = {'n_estimators': [100, 200, 300], 'criterion': ['mse', 'mae'], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS}
-RFCLASS_MAPPING = {'n_estimators': [100, 200, 300], 'criterion': ['gini', 'entropy'], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS}
+LOGREG_MAPPING = {'C': [None, 1.0, 2.0, 0.01], 'fit_intercept': BOOL_OPTIONS, 'penalty': ['l2', 'l1', 'elasticnet', 'none'], 'solver': ['lbfgs', 'newton-cg', 'liblinear', 'sag', 'saga'], 'max_iter': [None, 100, 500, 10], 'multi_class': ['auto', 'ovr', 'multinomial'], 'warm_start': BOOL_OPTIONS}
+KNN_MAPPING = { 'n_neighbors': [None, 2, 15], 'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'], 'leaf_size': [None, 30, 100, 10], 'p': [None, 2, 20], 'weights': ['uniform', 'distance']}
+DTREG_MAPPING = {'criterion': ["mse", "friedman_mse", "mae"], 'splitter': ["best", "random"], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
+DTCLASS_MAPPING = {'criterion': ["gini", "entropy"], 'splitter': ["best", "random"], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
+RFREG_MAPPING = {'n_estimators': [None, 100, 1000, 50], 'criterion': ['mse', 'mae'], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS, 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
+RFCLASS_MAPPING = {'n_estimators': [None, 100, 1000, 50], 'criterion': ['gini', 'entropy'], 'max_depth': [None, 3, 20], 'max_features': [None, "auto", "sqrt", "log2"], 'bootstrap': BOOL_OPTIONS, 'oob_score': BOOL_OPTIONS, 'min_impurity_decrease': [None, 0.0, 1.0, 0.05], 'min_samples_split': [None, 0.1, 1.0, 0.05], 'min_samples_leaf': [None, 0.1, 1.0, 0.05]}
 
 ALGO_PARAMS_MAPPING = {'00': LINREG_MAPPING, '01': KNN_MAPPING, '02': DTREG_MAPPING, '03': RFREG_MAPPING,
                 '10': LOGREG_MAPPING, '11': KNN_MAPPING, '12': DTCLASS_MAPPING, '13': RFCLASS_MAPPING}
@@ -35,7 +37,7 @@ data_file = st.file_uploader("Upload your dataset", type='csv')
 code_parts = list()
 
 if data_file is not None:
-    data = pd.read_csv(data_file, sep=';')
+    data = pd.read_csv(data_file)
     code_part_ld = "data = pd.read_csv(<filename>)"
     code_parts.append(code_part_ld)
 
@@ -46,7 +48,7 @@ if data_file is not None:
         st.text("Some of the descriptive statistics of the columns")
         st.dataframe(data.describe())
 
-    st.subheader("Fitting the model")
+    st.header("Fitting the model")
 
     features = st.multiselect("Features", options=data.columns)
     labels = st.selectbox("Labels", options=data.columns, index=len(data.columns)-1)
@@ -78,10 +80,18 @@ if data_file is not None:
 
         model_code = '1'+str(algos.index(algo_name))
 
-    st.sidebar.subheader("Hyperparametr  tuning")
+    st.sidebar.subheader("Hyperparameter  Tuning")
     params = dict()
     for name, value in ALGO_PARAMS_MAPPING[model_code].items():
-        params[name] = st.sidebar.selectbox(name, value)
+        if value[0] is None:
+            if isinstance(value[1], Union[int, float].__args__) and len(value) == 4:
+                params[name] = st.sidebar.number_input(name, min_value=value[1], max_value=value[2], step=value[3])
+            elif isinstance(value[1], Union[int, float].__args__) and len(value) == 3:
+                params[name] = st.sidebar.slider(name, min_value=value[1], max_value=value[2])
+            else:
+                params[name] = st.sidebar.selectbox(name, value)
+        else:
+            params[name] = st.sidebar.selectbox(name, value)
 
     model = ALGO_MAPPING[model_code]
     model.set_params(**params)
@@ -124,12 +134,6 @@ if data_file is not None:
         code_part_cm = "con_mat = confusion_matrix(y_test, y_pred_test)\nprint(con_mat)\n"
         code_part_cr = "report = classification_report(y_test, y_pred_test)\nprint(report)\n"
         code_parts.extend([code_part_cm, code_part_cr])
-
-
-
-
-
-
 
 
 

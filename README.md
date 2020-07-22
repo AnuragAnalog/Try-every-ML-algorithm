@@ -4,6 +4,8 @@ We as a Data Scientist are very lazy in trying out every different algorithm on 
 
 This web interface provides you a convinent way of switching between algorithms are seeing there results.
 
+With this now, you can apply machine learning models without writing a Single Piece of code.
+
 ## Required Modules
 
 * Pandas
@@ -36,9 +38,15 @@ $ streamlit run app.py
     * K Nearest Neighbours
     * Decision Trees
     * Random Forest
+    * Ada Boost
+    * Gradient Boosting
 
 * Classification
     * Logistic Regression
     * K Nearest Neighbours
     * Decision Trees
     * Random Forest
+    * Ada Boost
+    * Gradient Boosting
+
+*Want to contribute? then fork, develop, and make a pull-request*

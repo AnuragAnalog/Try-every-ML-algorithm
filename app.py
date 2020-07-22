@@ -3,12 +3,12 @@
 import pandas as pd
 import streamlit as st
 
-from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, mean_squared_error
 
 # Constants and mappings
 
@@ -32,10 +32,12 @@ st.title("Try Every Machine Learning Algorithms")
 st.text("Often, as a Data Scientist we are very lazy in trying all the different ML algorithms\nfor a given dataset.")
 
 data_file = st.file_uploader("Upload your dataset", type='csv')
+code_parts = list()
 
 if data_file is not None:
-    data = pd.read_csv(data_file)
+    data = pd.read_csv(data_file, sep=';')
     code_part_ld = "data = pd.read_csv(<filename>)"
+    code_parts.append(code_part_ld)
 
     if st.checkbox("Show Raw Data", value=True):
         st.dataframe(data)
@@ -44,17 +46,21 @@ if data_file is not None:
         st.text("Some of the descriptive statistics of the columns")
         st.dataframe(data.describe())
 
+    st.subheader("Fitting the model")
+
     features = st.multiselect("Features", options=data.columns)
     labels = st.selectbox("Labels", options=data.columns, index=len(data.columns)-1)
 
     X = data[features]
-    code_part_f = "X = data["+str(features)+"]"
-
     y = data[labels]
-    code_part_l = "y = data[[\'"+str(labels)+"\']]"
+
+    code_part_f = "X = data["+str(features)+"]"
+    code_part_l = "y = data[[\'"+str(labels)+"\']]\n"
+    code_parts.extend([code_part_f, code_part_l])
 
     train_size = st.slider("Train Test Split", value=0.7, format="%f")
-    code_part_tts = "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size="+str(1-train_size)+")"
+    code_part_tts = "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size="+str(1-train_size)+")\n"
+    code_parts.append(code_part_tts)
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1-train_size, random_state=DEFAULT_RANDOM_STATE)
 
@@ -84,14 +90,40 @@ if data_file is not None:
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
 
-    training_loss = mean_squared_error(y_pred_train, y_train)
-    testing_loss = mean_squared_error(y_pred_test, y_test)
+    st.header("Evaluating the model's performance")
+    if problem == "Regression":
+        training_loss = mean_squared_error(y_pred_train, y_train)
+        testing_loss = mean_squared_error(y_pred_test, y_test)
 
-    code_part_tls = "training_loss = mean_squared_error(y_pred_train, y_train)\ntesting_loss = mean_squared_error(y_pred_test, y_test)"
-    code_part_tlp = "printf(\"Training Loss is\", training_loss)\nprintf(\"Testing Loss is\", testing_loss)"
+        code_part_tls = "training_loss = mean_squared_error(y_pred_train, y_train)\ntesting_loss = mean_squared_error(y_pred_test, y_test)\n"
+        code_part_tlp = "printf(\"Training Loss is\", training_loss)\nprintf(\"Testing Loss is\", testing_loss)\n"
+        code_parts.extend([code_part_tls, code_part_tlp])
 
-    st.write("Training Loss is", training_loss)
-    st.write("Testing Loss is", testing_loss)
+        st.write("Training Loss is", training_loss)
+        st.write("Testing Loss is", testing_loss)
+    elif problem == "Classification":
+        st.subheader("Accuracy Score")
+        training_acc = accuracy_score(y_train, y_pred_train)
+        testing_acc = accuracy_score(y_test, y_pred_test)
+
+        code_part_tas = "training_acc = accuracy_score(y_train, y_pred_train)\ntesting_acc = accuracy_score(y_test, y_pred_test)\n"
+        code_part_tap = "print(\"Training Accuracy is\", training_acc)\nprint(\"Testing Accuracy is\", testing_acc)\n"
+        code_parts.extend([code_part_tas, code_part_tap])
+        
+        st.write("Training Accuracy is", training_acc)
+        st.write("Testing Accuracy is", testing_acc)
+
+        st.subheader("Confusion Matrix")
+        con_mat = confusion_matrix(y_test, y_pred_test)
+        st.table(con_mat)
+
+        st.subheader("Classification Report")
+        report = classification_report(y_test, y_pred_test)
+        st.write(report)
+
+        code_part_cm = "con_mat = confusion_matrix(y_test, y_pred_test)\nprint(con_mat)\n"
+        code_part_cr = "report = classification_report(y_test, y_pred_test)\nprint(report)\n"
+        code_parts.extend([code_part_cm, code_part_cr])
 
 
 
@@ -103,5 +135,7 @@ if data_file is not None:
 
 
     if st.checkbox("Show the code"):
-        code_part = code_part_ld + "\n\n" + code_part_f + "\n" + code_part_l + "\n\n" + code_part_tts + "\n\n" + code_part_tls + "\n\n" + code_part_tlp
-        st.code(code_part)
+        implement_code = ""
+        for code in code_parts:
+            implement_code = implement_code + "\n" + code
+        st.code(implement_code)

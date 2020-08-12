@@ -54,6 +54,11 @@ if data_file is not None:
         st.text("Some of the descriptive statistics of the columns")
         st.dataframe(data.describe())
 
+    if data.isna().any().any():
+        st.warning("Make sure that the dataset is NA free")
+    else:
+        st.success("You are good to go, the dataset is NA free")
+
     st.header("Fitting the model")
 
     features = st.multiselect("Features", options=data.columns)
@@ -103,8 +108,14 @@ if data_file is not None:
     model.set_params(**params)
     model.fit(X_train, y_train)
 
+    code_part_init = "model = "+str(model)+"\n"
+    code_part_fit = "model.fit(X_train, y_train)\n"
+
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
+
+    code_part_predicts = "y_pred_train = model.predict(X_train)\ny_pred_test = model.predict(X_test)\n"
+    code_parts.extend([code_part_init, code_part_fit, code_part_predicts])
 
     st.header("Evaluating the model's performance")
     if problem == "Regression":
@@ -113,7 +124,8 @@ if data_file is not None:
         training_loss = LOSS_MAPPING[loss](y_pred_train, y_train)
         testing_loss = LOSS_MAPPING[loss](y_pred_test, y_test)
 
-        code_part_tls = "training_loss = mean_squared_error(y_pred_train, y_train)\ntesting_loss = mean_squared_error(y_pred_test, y_test)\n"
+        loss_str = str(LOSS_MAPPING[loss]).split()[1]
+        code_part_tls = "training_loss = "+loss_str+"(y_pred_train, y_train)\ntesting_loss = "+loss_str+"(y_pred_test, y_test)\n"
         code_part_tlp = "printf(\"Training Loss is\", training_loss)\nprintf(\"Testing Loss is\", testing_loss)\n"
         code_parts.extend([code_part_tls, code_part_tlp])
 
@@ -144,6 +156,7 @@ if data_file is not None:
         code_parts.extend([code_part_cm, code_part_cr])
 
     if st.checkbox("Show the code"):
+        st.text("Code to implement the above algorithm")
         implement_code = ""
         for code in code_parts:
             implement_code = implement_code + "\n" + code

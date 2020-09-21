@@ -12,6 +12,12 @@ from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, mean_squared_error, mean_absolute_error, mean_squared_log_error
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, AdaBoostRegressor, AdaBoostClassifier, GradientBoostingRegressor, GradientBoostingClassifier
 
+def encode_features(data, cols, drop_original=True):
+    pass
+
+# Customize
+st.set_option('deprecation.showfileUploaderEncoding', False)
+
 # Constants and mappings
 
 DEFAULT_RANDOM_STATE = 88

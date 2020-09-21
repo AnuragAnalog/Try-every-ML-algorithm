@@ -71,6 +71,7 @@ $ streamlit run app.py
 
 ## Future Work
 
-* Add an option to show the code which implements the above selected algorithm with the corresponding hyperparameters.
-* Add more algorithms
-* Add some functionality for preprocessing data too.
+* [x] Add an option to show the code which implements the above selected algorithm with the corresponding hyperparameters.
+* [x] Added code for One Hotencoding.
+* [ ] Add more algorithms.
+* [ ] Add some functionality for preprocessing data too.

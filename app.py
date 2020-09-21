@@ -3,6 +3,7 @@
 import pandas as pd
 import streamlit as st
 
+from PIL import Image
 from typing import Union
 
 from sklearn.model_selection import train_test_split
@@ -12,10 +13,24 @@ from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, mean_squared_error, mean_absolute_error, mean_squared_log_error
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, AdaBoostRegressor, AdaBoostClassifier, GradientBoostingRegressor, GradientBoostingClassifier
 
+# Required functions
 def encode_features(data, cols, drop_original=True):
-    pass
+    if len(cols) == 1:
+        data = pd.concat([data, pd.get_dummies(data, prefix=cols[0])], axis=1)
+    else:
+        data = pd.concat([data, pd.get_dummies(data)], axis=1)
 
-# Customize
+    if drop_original:
+        data.drop(labels=cols, axis=1, inplace=True)
+
+    return data
+
+# Setting page items
+# favicon = Image.open('./favicon.png')
+
+# st.beta_set_favicon(favicon, format='PNG')
+
+# Suppress streamlit warning's
 st.set_option('deprecation.showfileUploaderEncoding', False)
 
 # Constants and mappings
@@ -65,9 +80,18 @@ if data_file is not None:
     else:
         st.success("You are good to go, the dataset is NA free")
 
+    st.header("Preprocessing")
+    encode_cols = st.multiselect("Features", options=data.columns, key='preprocessing')
+
+    if len(encode_cols) != 0:
+        st.subheader("Features which will be encoded are")
+        st.write(encode_cols)
+
+        data = encode_features(data, encode_cols)
+
     st.header("Fitting the model")
 
-    features = st.multiselect("Features", options=data.columns)
+    features = st.multiselect("Features", options=data.columns, key='fitting')
     labels = st.selectbox("Labels", options=data.columns, index=len(data.columns)-1)
 
     X = data[features]
@@ -80,7 +104,7 @@ if data_file is not None:
     train_size = st.slider("Train Test Split", value=0.7, format="%f")
     code_part_tts = "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size="+str(1-train_size)+")\n"
     code_parts.append(code_part_tts)
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1-train_size, random_state=DEFAULT_RANDOM_STATE)
 
     problem = st.selectbox("What type of Problem are you dealing with?", ['Regression', 'Classification'])
@@ -97,7 +121,10 @@ if data_file is not None:
 
         model_code = '1'+str(algos.index(algo_name))
 
+    st.sidebar.title(problem)
+    st.sidebar.header(algo_name)
     st.sidebar.subheader("Hyperparameter  Tuning")
+
     params = dict()
     for name, value in ALGO_PARAMS_MAPPING[model_code].items():
         if value[0] is None:

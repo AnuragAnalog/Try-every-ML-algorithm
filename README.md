@@ -6,7 +6,7 @@ This web interface provides you a convinent way of switching between algorithms 
 
 The web application is written in streamlit.
 
-Link to the web app is [here](https://try-every-ml-algorithm.herokuapp.com/)
+Link to the web app is [here](https://share.streamlit.io/anuraganalog/try-every-ml-algorithm/app.py)
 
 ## How it works
 

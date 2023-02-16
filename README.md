@@ -21,7 +21,7 @@ Link to the web app is [here](https://share.streamlit.io/anuraganalog/try-every-
 
 > This app expects a preprocessed dataset with all the NaN, Null values handled properly, One Hot encoded, and scaled
 
-## A Demo
+## Demo
 ![demo](./demo.gif)
 
 ## Required Modules
